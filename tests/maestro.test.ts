@@ -13,6 +13,31 @@ test('main loop cannot edit code but can edit markdown and ~/.claude', async ($,
   expect(memory.isError).not.toBe(true)
 })
 
+test('under .claude/ the main loop edits memory, plans and settings, not code', async ($, on) => {
+  on('tool.call', () => ({ result: {} }))
+
+  const allowed = [
+    '/home/u/.claude/projects/-repo/memory/notes.json',
+    '/home/u/.claude/plans/plan.txt',
+    '/home/u/.claude/settings.json',
+    '/repo/.claude/settings.local.json',
+  ]
+  for (const file_path of allowed) {
+    const ran = await $.tool.call({ tool: 'Write', file_path, content: 'x' })
+    expect(ran.isError).not.toBe(true)
+  }
+
+  const blocked = [
+    '/repo/.claude/hooks/check.ts',
+    '/home/u/.claude/skills/maestro/hooks/register.ts',
+    '/home/u/.claude/plugins/cache/x/index.js',
+  ]
+  for (const file_path of blocked) {
+    const ran = await $.tool.call({ tool: 'Write', file_path, content: 'x' })
+    expect(ran.deny).toContain('the orchestrator does not Write')
+  }
+})
+
 test('a subagent can edit code', async ($, on) => {
   on('tool.call', () => ({ result: {} }))
 

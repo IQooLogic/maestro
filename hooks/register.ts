@@ -14,9 +14,14 @@ const SPAWN_MODELS: Record<string, string> = {
   claude: 'sonnet',
 }
 
-// Files the orchestrator may still edit itself: docs, plans, notes, and
-// Claude's own config and memory. Everything else goes to an implementer.
-const ORCHESTRATOR_EDITABLE = [/\.md$/, /(^|\/)\.claude\//]
+// Files the orchestrator may still edit itself: docs, plans, notes, Claude's
+// memory and settings. Everything else goes to an implementer, code under
+// .claude/ too (hooks, plugins, and this plugin when linked into skills/).
+const ORCHESTRATOR_EDITABLE = [
+  /\.md$/,
+  /(^|\/)\.claude\/(projects|plans|memory)\//,
+  /(^|\/)\.claude\/settings(\.local)?\.json$/,
+]
 
 const ROUTING = `# Maestro: model tiers
 

@@ -13,7 +13,7 @@ Built-in agents are pinned too: `Explore` → Haiku, `general-purpose` and `clau
 
 ## What it enforces
 
-- The main session cannot `Edit`, `Write` or `NotebookEdit` code files. It may still edit `*.md` files and anything under `.claude/` (plans, docs, memory). The deny message tells the model which implementer to use.
+- The main session cannot `Edit`, `Write` or `NotebookEdit` code files. It may still edit `*.md` files, and under `.claude/` only `projects/`, `plans/`, `memory/` and `settings(.local).json`. Code under `.claude/` (hooks, plugins) is blocked too. The deny message tells the model which implementer to use.
 - An Agent call's `model` parameter cannot move work to another tier: the model is set by the subagent type.
 - The conversation's first prompt carries the routing rules as hidden context (`prompt.submit`). After a `/clear` or a main-session compaction, the next prompt carries them again. The system prompt and the first message's context blocks are owned by a plugin that runs ahead of this one, so they cannot carry it.
 
