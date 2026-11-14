@@ -104,3 +104,61 @@ test('the routing rules ride the first prompt after a main-loop compaction only'
   const afterMain = await $.prompt.submit({ text: 'again' })
   expect(afterMain.context?.some(c => c.includes('maestro:scout'))).toBe(true)
 })
+
+test('/maestro off lets the main loop edit code, /maestro on blocks it again', async ($, on) => {
+  on('tool.call', () => ({ result: {} }))
+  on('ui.status', () => ({ value: undefined }))
+
+  const off = await $.command.run({ command: 'maestro', args: 'off' })
+  expect(off.text).toBe('maestro: main-session code edits are allowed')
+  const unlocked = await $.tool.call({ tool: 'Edit', file_path: '/repo/main.go', old_string: 'a', new_string: 'b' })
+  expect(unlocked.deny).toBeUndefined()
+
+  const status = await $.command.run({ command: 'maestro', args: 'status' })
+  expect(status.text).toBe('maestro: main-session code edits are allowed')
+
+  const back = await $.command.run({ command: 'maestro', args: 'on' })
+  expect(back.text).toBe('maestro: main-session code edits are blocked')
+  const locked = await $.tool.call({ tool: 'Edit', file_path: '/repo/main.go', old_string: 'a', new_string: 'b' })
+  expect(locked.deny).toContain('the orchestrator does not Edit')
+})
+
+test('/maestro refuses an unknown argument and keeps its state', async ($, on) => {
+  on('ui.status', () => ({ value: undefined }))
+
+  const bad = await $.command.run({ command: 'maestro', args: 'maybe' })
+  expect(bad.text).toBe('maestro: unknown argument "maybe" (use on, off or status)')
+
+  const status = await $.command.run({ command: 'maestro', args: '' })
+  expect(status.text).toBe('maestro: main-session code edits are blocked')
+})
+
+test('the main loop cannot edit a notebook', async ($, on) => {
+  on('tool.call', () => ({ result: {} }))
+
+  const ran = await $.tool.call({ tool: 'NotebookEdit', notebook_path: '/repo/analysis.ipynb', new_source: 'x' })
+  expect(ran.deny).toContain('the orchestrator does not NotebookEdit code (/repo/analysis.ipynb)')
+})
+
+test('the main loop runs on the orchestrator model, a subagent keeps its own', async ($, on) => {
+  on('turn.step', async function* (_, e) {
+    return { turnId: e.turnId, index: e.index, answer: e.model, toolUses: [], stopReason: 'end_turn' as const, usage: null }
+  })
+
+  const step = async (agentId?: string) => {
+    const stream = $.turn.step({ turnId: 't1', index: 0, model: 'opus', messageCount: 1, agentId })
+    let chunk = await stream.next()
+    while (chunk.done !== true) chunk = await stream.next()
+    return chunk.value.answer
+  }
+
+  expect(await step()).toBe('fable')
+  expect(await step('a1')).toBe('opus')
+})
+
+test('the claude agent type is pinned to sonnet', async ($, on) => {
+  on('agent.spawn', (_, e) => ({ model: e.model ?? 'unset', agentId: 'a1' }))
+
+  const got = await $.agent.spawn({ subagentType: 'claude', prompt: 'x', model: 'opus' })
+  expect(got.model).toBe('sonnet')
+})
