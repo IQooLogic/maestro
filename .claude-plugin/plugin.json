@@ -1,6 +1,6 @@
 {
   "name": "maestro",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Fable orchestrates, Opus/Sonnet implement, Haiku reads and searches; main session cannot edit code",
   "author": {
     "name": "Milos"
