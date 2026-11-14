@@ -4,7 +4,7 @@ test('main loop cannot edit code but can edit markdown and ~/.claude', async ($,
   on('tool.call', () => ({ result: {} }))
 
   const code = await $.tool.call({ tool: 'Edit', file_path: '/repo/main.go', old_string: 'a', new_string: 'b' })
-  expect(code.isError === true || code.deny !== undefined).toBe(true)
+  expect(code.deny).toContain('the orchestrator does not Edit code (/repo/main.go)')
 
   const doc = await $.tool.call({ tool: 'Write', file_path: '/repo/docs/plans/plan.md', content: 'x' })
   expect(doc.isError).not.toBe(true)
