@@ -1,6 +1,11 @@
 {
   "name": "maestro",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Fable orchestrates, Opus/Sonnet implement, Haiku reads and searches; main session cannot edit code",
-  "license": "MIT"
+  "author": {
+    "name": "AST"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/IQooLogic/maestro",
+  "homepage": "https://github.com/IQooLogic/maestro#readme"
 }
