@@ -104,7 +104,7 @@ feat(agents): give scout an allowlisted read-only shell
 test: assert the edit guard's own deny message
 ```
 
-Make one commit for each logical change. The release notes are written from these headers (see [RELEASING.md](RELEASING.md#4-write-the-release-notes)).
+Make one commit for each logical change. The release notes are written from these headers (see [RELEASING.md](RELEASING.md#5-write-the-release-notes)).
 
 ## Send a pull request
 

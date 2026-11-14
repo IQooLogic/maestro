@@ -37,12 +37,25 @@ You need:
 
   The output must be `origin/master`. A fresh clone does this for you. If the output is `fatal: no upstream configured`, run `git branch -u origin/master master` once.
 
-## 1. Choose the version number
+## 1. Decide if a release is needed
+
+Make a release only when the plugin itself changed: `hooks/`, `agents/` or `.claude-plugin/`. A change to the docs (`*.md`), the unit tests (`tests/`) or the end-to-end tests (`e2e/`) gets no release: users read the docs on GitHub from `master`, and the plugin they run is the same.
+
+To see if the plugin changed since the last tag:
+
+```
+git fetch --tags
+git diff --stat $(git describe --tags --abbrev=0)..master -- hooks agents .claude-plugin
+```
+
+If the output is empty, stop here: no release.
+
+## 2. Choose the version number
 
 maestro uses [semantic versioning](https://semver.org): `MAJOR.MINOR.PATCH`.
 
-| Change since the last release | Increase | Example |
-|-------------------------------|----------|---------|
+| Change to the plugin since the last release | Increase | Example |
+|---------------------------------------------|----------|---------|
 | Only fixes, no new behaviour | `PATCH` | `0.3.0` → `0.3.1` |
 | New behaviour, or a guard that allows or refuses more | `MINOR` | `0.3.0` → `0.4.0` |
 | A change that breaks how people use or configure it | `MAJOR` | `0.3.0` → `1.0.0` |
@@ -52,16 +65,14 @@ Before 1.0.0, a breaking change increases `MINOR`, not `MAJOR`.
 To see what changed, list the commits since the last tag:
 
 ```
-git fetch --tags
-git describe --tags --abbrev=0
 git log --oneline $(git describe --tags --abbrev=0)..master
 ```
 
-The commit types tell you the size: `feat` means `MINOR`; only `fix`, `test`, `docs` and `chore` mean `PATCH`.
+Size the release by the commits that change the plugin: a `feat` means `MINOR`, and `fix` alone means `PATCH`. Commits that change only docs or tests do not count.
 
 In the steps below, replace `X.Y.Z` with the version you chose.
 
-## 2. Make sure master is ready
+## 3. Make sure master is ready
 
 ```
 git switch master
@@ -88,9 +99,9 @@ e2e/run.sh
 
 **Check:** the last line is `maestro e2e: all checks passed`. If a scenario fails, read its log before you decide: the model can choose differently from one run to the next. Run that scenario again on its own (`e2e/run.sh <name>`). Stop if it fails again.
 
-If a check fails, stop. Fix the problem in a normal change (see [CONTRIBUTING.md](CONTRIBUTING.md#make-a-change)), then start again from step 2.
+If a check fails, stop. Fix the problem in a normal change (see [CONTRIBUTING.md](CONTRIBUTING.md#make-a-change)), then start again from step 3.
 
-## 3. Bump the version
+## 4. Bump the version
 
 1. In `.claude-plugin/plugin.json`, set `"version"` to `"X.Y.Z"`. `marketplace.json` has no version: do not add one.
 
@@ -110,7 +121,7 @@ If a check fails, stop. Fix the problem in a normal change (see [CONTRIBUTING.md
 
 **Check:** `git log --oneline -1` shows `chore: bump to X.Y.Z`, and `git status` shows that your branch is up to date with `origin/master`.
 
-## 4. Write the release notes
+## 5. Write the release notes
 
 Write the notes in a file outside the repository, for example `/tmp/release-vX.Y.Z.md`. Do not commit it.
 
@@ -158,7 +169,7 @@ Copy the Limits section of the README if it changed.
 
 The [v0.3.0 release](https://github.com/IQooLogic/maestro/releases/tag/v0.3.0) is an example.
 
-## 5. Tag the release
+## 6. Tag the release
 
 Make an annotated tag on the version bump commit, then push the tag:
 
@@ -175,7 +186,7 @@ git ls-remote --tags origin vX.Y.Z
 
 The output shows `refs/tags/vX.Y.Z`. The line that ends in `^{}` shows the same commit as `git rev-parse HEAD`.
 
-## 6. Create the GitHub release
+## 7. Create the GitHub release
 
 ```
 gh release create vX.Y.Z \
@@ -197,7 +208,7 @@ The output shows `"isDraft":false` and `"isPrerelease":false`. Open the `url` an
 
 To prepare the release and publish it later, add `--draft` to `gh release create`. Publish it with `gh release edit vX.Y.Z --repo IQooLogic/maestro --draft=false`.
 
-## 7. Test the install
+## 8. Test the install
 
 Do this on a machine or in a user account where maestro is installed from GitHub, not from a local folder.
 
@@ -212,7 +223,7 @@ Do this on a machine or in a user account where maestro is installed from GitHub
 3. Run `/maestro status`. It must answer `maestro: main-session code edits are blocked`.
 4. Run `claude plugin list`. maestro must show version `X.Y.Z`.
 
-For a first install, use the commands in the [Install](README.md#install) section of the README instead of step 1.
+For a first install, use the commands in the [Install](README.md#install) section of the README instead of the update commands above.
 
 ## If something went wrong
 
@@ -243,6 +254,7 @@ $(gh release view vX.Y.Z --repo IQooLogic/maestro --json body --jq .body)"
 When you know the steps, this is all of them:
 
 ```
+git fetch --tags && git diff --stat $(git describe --tags --abbrev=0)..master -- hooks agents .claude-plugin   # empty: stop, no release
 git switch master && git pull && git status
 claude plugin validate . && claude plugin test . && e2e/run.sh
 # set "version": "X.Y.Z" in .claude-plugin/plugin.json
