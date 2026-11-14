@@ -48,3 +48,34 @@ test('the routing rules ride the first prompt only', async ($, on) => {
   const second = await $.prompt.submit({ text: 'again' })
   expect(second.context ?? []).toEqual([])
 })
+
+test('the routing rules ride the first prompt after a /clear', async ($, on) => {
+  on('prompt.submit', (_, e) => ({ text: e.text, context: e.context }))
+  on('session.end', (_, e) => ({ sessionId: e.sessionId }))
+
+  await $.prompt.submit({ text: 'hello' })
+  await $.session.end({ reason: 'clear', sessionId: 's1', resume: { id: 's1' } })
+
+  const afterClear = await $.prompt.submit({ text: 'fresh' })
+  expect(afterClear.context?.some(c => c.includes('maestro:scout'))).toBe(true)
+})
+
+test('the routing rules ride the first prompt after a main-loop compaction only', async ($, on) => {
+  on('prompt.submit', (_, e) => ({ text: e.text, context: e.context }))
+  const summary = [{ role: 'user' as const, text: 'summary', toolUses: [] }]
+  on('session.compact', () => ({ messages: summary }))
+
+  await $.prompt.submit({ text: 'hello' })
+
+  await $.session.compact({ trigger: 'auto', messages: summary, agentId: 'a1' })
+  const afterSubagent = await $.prompt.submit({ text: 'again' })
+  expect(afterSubagent.context ?? []).toEqual([])
+
+  await $.session.compact({ trigger: 'precompute', messages: summary })
+  const afterPrecompute = await $.prompt.submit({ text: 'again' })
+  expect(afterPrecompute.context ?? []).toEqual([])
+
+  await $.session.compact({ trigger: 'auto', messages: summary })
+  const afterMain = await $.prompt.submit({ text: 'again' })
+  expect(afterMain.context?.some(c => c.includes('maestro:scout'))).toBe(true)
+})

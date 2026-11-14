@@ -73,7 +73,7 @@ export const register: Register = on => {
     return next(e)
   })
 
-  // Routing rules ride the session's first prompt as hidden context. The
+  // Routing rules ride the conversation's first prompt as hidden context. The
   // prompt.compose and prompt.context events are answered by a plugin above
   // this one and never reach here, so they cannot carry it.
   let hasRouted = false
@@ -82,6 +82,22 @@ export const register: Register = on => {
     hasRouted = true
 
     return next({ ...e, context: [...(e.context ?? []), ROUTING] })
+  })
+
+  // A main-loop compaction can summarize the rules away: the next prompt
+  // carries them again. Subagent compactions and precomputes change nothing.
+  on('session.compact', async ($, e, next) => {
+    const result = await next(e)
+    if (e.agentId === undefined && e.trigger !== 'precompute' && result.skip === undefined) hasRouted = false
+
+    return result
+  })
+
+  // A /clear starts a new conversation with no session.start: re-arm here.
+  on('session.end', ($, e, next) => {
+    if (e.reason === 'clear') hasRouted = false
+
+    return next(e)
   })
 
   const guardMainEdit = (agentId: string | undefined, path: string, tool: string): string | undefined => {
