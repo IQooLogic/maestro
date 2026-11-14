@@ -135,3 +135,7 @@ A reload runs `register` and `session.start` again, so `/maestro` is back to `on
 claude plugin validate .
 claude plugin test .
 ```
+
+## License
+
+MIT. See [LICENSE](LICENSE).
