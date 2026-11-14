@@ -1,0 +1,12 @@
+{
+  "name": "maestro",
+  "owner": { "name": "AST" },
+  "description": "Model-tier orchestration for Claude Code",
+  "plugins": [
+    {
+      "name": "maestro",
+      "source": "./",
+      "description": "Fable orchestrates, Opus/Sonnet implement, Haiku reads and searches; main session cannot edit code"
+    }
+  ]
+}
