@@ -32,35 +32,58 @@ Edit the constants at the top of `hooks/register.ts`: `ORCHESTRATOR_MODEL`, `SPA
 
 ## Install
 
-This repository is a plugin marketplace (`.claude-plugin/marketplace.json`). Add it once, then install the plugin. Replace `<git-url-of-this-repo>` with the URL once the repository is pushed. At the prompt of a Claude Code session:
+This repository is a plugin marketplace (`.claude-plugin/marketplace.json`). Add the marketplace once, then install the plugin from it.
+
+### From GitHub
+
+At the prompt of a Claude Code session:
 
 ```
-/plugin marketplace add <git-url-of-this-repo>
+/plugin marketplace add IQooLogic/maestro
 /plugin install maestro@maestro
 ```
 
 From a shell:
 
 ```
-claude plugin marketplace add <git-url-of-this-repo>
+claude plugin marketplace add IQooLogic/maestro
 claude plugin install maestro@maestro
 ```
 
-With a local checkout, add the folder instead of the git URL; the plugin is then read from the checkout, and edits there take effect on `/reload-plugins` with no reinstall:
+Pick the `user` scope when asked, so the plugin is on in every project. Then run `/reload-plugins`, or start a new session.
+
+`IQooLogic/maestro` is the short form of `https://github.com/IQooLogic/maestro.git`. You can also give the full HTTPS or SSH URL (`git@github.com:IQooLogic/maestro.git`). Claude Code clones the repository with your git credentials.
+
+To get a newer version later:
 
 ```
-/plugin marketplace add /home/milos/WORK/maestro
+claude plugin marketplace update maestro
+claude plugin update maestro@maestro
+```
+
+### From a local checkout
+
+Clone the repository and add the folder instead of the GitHub name. The plugin is then read from the checkout, and edits there take effect on `/reload-plugins` with no reinstall:
+
+```
+git clone https://github.com/IQooLogic/maestro.git /path/to/maestro
+```
+
+```
+/plugin marketplace add /path/to/maestro
 /plugin install maestro@maestro
 ```
 
-Pick the `user` scope when asked, so the plugin is on in every project.
+### Check that it is on
+
+Run `/maestro status` in a session. `/plugin` lists `maestro` under the installed plugins.
 
 ## Run without installing
 
 For one session, from a shell:
 
 ```
-claude --plugin-dir /home/milos/WORK/maestro
+claude --plugin-dir /path/to/maestro
 ```
 
 An interactive session watches that folder and reloads the hooks module when a file changes.
@@ -72,7 +95,7 @@ An interactive session watches some plugin folders and reloads the hooks module 
 **Option A: link it into the skills folder (recommended).** Claude Code loads every plugin under `~/.claude/skills/<name>` in every session and watches it. A link is watched at the folder it points to, so you edit the repository and the session reloads:
 
 ```
-ln -s /home/milos/WORK/maestro ~/.claude/skills/maestro
+ln -s /path/to/maestro ~/.claude/skills/maestro
 ```
 
 To use a copy instead of a link, run `cp -r` with the same paths. A copy is watched too, but edits in the repository do not reach it: copy again after each change, or edit the copy and bring the changes back.
@@ -83,7 +106,7 @@ For one project only, put the link or copy in that project's `.claude/skills/mae
 
 ```json
 "env": {
-  "CLAUDE_CODE_PLUGIN_DIRS": "/home/milos/WORK/maestro"
+  "CLAUDE_CODE_PLUGIN_DIRS": "/path/to/maestro"
 }
 ```
 
@@ -102,7 +125,7 @@ A hook that fails, or a module that does not load, is named in a dim line in the
 ## Reload after an edit
 
 - Installed from a local folder marketplace, or started with `--plugin-dir`: run `/reload-plugins` in the session (a `--plugin-dir` session also reloads on save).
-- Installed from the git URL: commit and push, then `claude plugin update maestro` and `/reload-plugins`.
+- Installed from GitHub: commit and push, then `claude plugin marketplace update maestro`, `claude plugin update maestro@maestro` and `/reload-plugins`.
 
 A reload runs `register` and `session.start` again, so `/maestro` is back to `on`.
 
