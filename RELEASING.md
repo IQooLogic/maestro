@@ -80,6 +80,14 @@ claude plugin test .
 
 **Check:** `validate` ends with `✔ Validation passed` and shows no `✘` line. `test` shows `0 fail`.
 
+Then run the end-to-end tests (real sessions, about $1.30, see [e2e/README.md](e2e/README.md)):
+
+```
+e2e/run.sh
+```
+
+**Check:** the last line is `maestro e2e: all checks passed`. If a scenario fails, read its log before you decide: the model can choose differently from one run to the next. Run that scenario again on its own (`e2e/run.sh <name>`). Stop if it fails again.
+
 If a check fails, stop. Fix the problem in a normal change (see [CONTRIBUTING.md](CONTRIBUTING.md#make-a-change)), then start again from step 2.
 
 ## 3. Bump the version
@@ -236,7 +244,7 @@ When you know the steps, this is all of them:
 
 ```
 git switch master && git pull && git status
-claude plugin validate . && claude plugin test .
+claude plugin validate . && claude plugin test . && e2e/run.sh
 # set "version": "X.Y.Z" in .claude-plugin/plugin.json
 git add .claude-plugin/plugin.json && git commit -m "chore: bump to X.Y.Z" && git push origin master
 # write /tmp/release-vX.Y.Z.md

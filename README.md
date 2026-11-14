@@ -141,6 +141,12 @@ claude plugin test .
 
 Both must pass before a change is merged or released.
 
+End-to-end tests run real headless sessions against a small Go project. They cost money; see [e2e/README.md](e2e/README.md):
+
+```
+e2e/run.sh
+```
+
 ## Contributing and releases
 
 - To report a problem or send a change, see [CONTRIBUTING.md](CONTRIBUTING.md).
