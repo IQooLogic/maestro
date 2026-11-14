@@ -53,7 +53,7 @@ claude plugin marketplace add IQooLogic/maestro
 claude plugin install maestro@maestro
 ```
 
-Pick the `user` scope when asked, so the plugin is on in every project. Then run `/reload-plugins`, or start a new session.
+With no `--scope`, the shell commands install for every project (`user` scope). At the session prompt, `/plugin install` asks which scope to use. See [Every project or one project](#every-project-or-one-project) to choose. Then run `/reload-plugins`, or start a new session.
 
 `IQooLogic/maestro` is the short form of `https://github.com/IQooLogic/maestro.git`. You can also give the full HTTPS or SSH URL (`git@github.com:IQooLogic/maestro.git`). Claude Code clones the repository with your git credentials.
 
@@ -62,6 +62,63 @@ To get a newer version later:
 ```
 claude plugin marketplace update maestro
 claude plugin update maestro@maestro
+```
+
+### Every project or one project
+
+maestro changes how every session it is on works: the main session runs on Fable and cannot edit code files. Choose where to turn it on with `--scope`. Use the same scope for the marketplace and for the plugin.
+
+| Scope | maestro is on | Written to | Shared through git |
+|-------|---------------|------------|--------------------|
+| `user` (default) | In every project you open | `~/.claude/settings.json` | No |
+| `project` | In this project, for everyone who uses it | `<project>/.claude/settings.json` | Yes, when you commit the file |
+| `local` | In this project, for you only | `<project>/.claude/settings.local.json` | No |
+
+**Every project.** From any folder:
+
+```
+claude plugin marketplace add IQooLogic/maestro
+claude plugin install maestro@maestro --scope user
+```
+
+**One project, for the whole team.** From the project's root folder:
+
+```
+claude plugin marketplace add IQooLogic/maestro --scope project
+claude plugin install maestro@maestro --scope project
+```
+
+This writes both the marketplace and the plugin into `.claude/settings.json`:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "maestro": { "source": { "source": "github", "repo": "IQooLogic/maestro" } }
+  },
+  "enabledPlugins": { "maestro@maestro": true }
+}
+```
+
+Commit that file, so that everyone who opens the project uses the same setting.
+
+**One project, for you only.** From the project's root folder, use `--scope local` in both commands. Add `.claude/settings.local.json` to the project's `.gitignore` if it is not ignored already.
+
+**Turn it off in one project.** If maestro is on at a wider scope, turn it off at a narrower one. From the project's root folder:
+
+```
+claude plugin disable maestro@maestro --scope local     # for you only
+claude plugin disable maestro@maestro --scope project   # for everyone in the project
+```
+
+This writes `"maestro@maestro": false` into that scope's settings file, and the narrower scope wins. `claude plugin enable` with the same scope turns it back on. To lift only the edit block for one session, use `/maestro off` instead (see [Commands](#commands)).
+
+**See where it is on.** From the project's folder, `claude plugin list` shows maestro's version, `Scope` and `Status` (`✔ enabled` or `✘ disabled`).
+
+**Remove it.** Use the scope you installed it with:
+
+```
+claude plugin uninstall maestro@maestro --scope project
+claude plugin marketplace remove maestro
 ```
 
 ### From a local checkout
