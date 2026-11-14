@@ -15,13 +15,14 @@ Built-in agents are pinned too: `Explore` → Haiku, `general-purpose` and `clau
 
 - The main session cannot `Edit`, `Write` or `NotebookEdit` code files. It may still edit `*.md` files, and under `.claude/` only `projects/`, `plans/`, `memory/` and `settings(.local).json`. Code under `.claude/` (hooks, plugins) is blocked too. The deny message tells the model which implementer to use.
 - An Agent call's `model` parameter cannot move work to another tier: the model is set by the subagent type.
-- The scout's `Bash` runs only `git log`, `git show`, `git diff`, `git blame`, `ls` and `wc`, one command at a time. Pipes, redirects, `;`, `&&`, `$(...)`, backticks and git's `--output` are refused. If the guard cannot look up which agent made the call, it refuses the call.
+- The scout's `Bash` runs only `git log`, `git show`, `git diff`, `git blame`, `ls` and `wc`, one command of plain words at a time. Any shell syntax (quotes, `\`, `$`, globs, braces, pipes, redirects, `;`, `&&`) is refused, so bash runs exactly the words the guard checked. So are git's `--output`, `--ext-diff` and `--textconv`, and any prefix git would read as one of them (`--out=`). If the guard cannot look up which agent made the call, it refuses the call.
 - The conversation's first prompt carries the routing rules as hidden context (`prompt.submit`). After a `/clear` or a main-session compaction, the next prompt carries them again. The system prompt and the first message's context blocks are owned by a plugin that runs ahead of this one, so they cannot carry it.
 
 ## Limits
 
 - The main session's and the implementers' `Bash` is not guarded: the orchestrator can still write files through the shell.
-- The scout's allowlist checks the command's text, not what the program does. Keep `SCOUT_COMMANDS` short, and check each option of a new entry for writes (as git's `--output`).
+- The scout's allowlist checks the command's words, not what the program does. Keep `SCOUT_COMMANDS` short, and check each option of a new entry for writes; add any you find to `RISKY_OPTIONS`.
+- `git diff` still runs a diff driver set in your git config (`diff.external`, textconv filters), as it does when you run it yourself.
 - `/model` does not change the main session's model while the plugin is on. Change `ORCHESTRATOR_MODEL` in `hooks/register.ts` instead.
 
 ## Commands

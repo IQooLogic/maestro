@@ -24,18 +24,30 @@ const ORCHESTRATOR_EDITABLE = [
 ]
 
 // Shell commands the scout may run: read-only ones its Read, Grep and Glob
-// do not cover. A command passes only when it starts with one of these, joins
-// nothing (no ; & | < > ` $( or newline) and writes no file (git's --output).
+// do not cover. A command passes only when it is plain words (so bash runs
+// exactly the words checked here), starts with one of these, and names no
+// option that writes a file or runs a program.
 const SCOUT_COMMANDS = [['git', 'log'], ['git', 'show'], ['git', 'diff'], ['git', 'blame'], ['ls'], ['wc']]
-const SHELL_JOINERS = /[;&|<>`\n\r]|\$\(/
+
+// No quotes, backslashes, $, globs, braces, operators, tabs or newlines: bash
+// can neither expand nor split a word differently from the check below.
+const PLAIN_WORDS = /^[A-Za-z0-9_\-./:,=@^~%+ ]+$/
+
+// Matched as git matches them, by any unambiguous prefix (--out= is --output=).
+const RISKY_OPTIONS = ['--output', '--ext-diff', '--textconv']
 
 const scoutCommandRefusal = (command: string): string | undefined => {
-  if (SHELL_JOINERS.test(command)) return 'it chains, pipes, redirects or substitutes'
+  if (!PLAIN_WORDS.test(command)) return 'it uses shell syntax (quotes, \\, $, globs, braces or operators); use plain words only'
 
-  const words = command.trim().split(/\s+/).map(word => word.replace(/["']/g, ''))
+  const words = command.trim().split(/ +/)
   const isListed = SCOUT_COMMANDS.some(prefix => prefix.every((word, i) => words[i] === word))
   if (!isListed) return `it is not one of: ${SCOUT_COMMANDS.map(prefix => prefix.join(' ')).join(', ')}`
-  if (words.some(word => word.startsWith('--output'))) return 'it writes a file (--output)'
+
+  const isRisky = (word: string) => {
+    const name = word.split('=')[0]
+    return name.startsWith('--') && name.length > 2 && RISKY_OPTIONS.some(option => option.startsWith(name))
+  }
+  if (words.some(isRisky)) return `it writes a file or runs a program (${RISKY_OPTIONS.join(', ')}, or a prefix of one)`
 
   return undefined
 }

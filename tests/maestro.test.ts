@@ -172,7 +172,16 @@ test('the scout runs only listed read-only shell commands', async ($, on) => {
     ],
   }))
 
-  const allowed = ['git log --oneline -5', 'git show HEAD:go.mod', "git diff 'main' -- src", 'git blame -L 1,9 a.go', 'ls -la src', 'wc -l a.go']
+  const allowed = [
+    'git log --oneline -5',
+    'git log --format=%h%x09%an%x09%s -- src/a.go',
+    'git show HEAD:go.mod',
+    'git diff main -- src',
+    'git diff --no-ext-diff main',
+    'git blame -L 1,9 a.go',
+    'ls -la src',
+    'wc -l a.go',
+  ]
   for (const command of allowed) {
     const ran = await $.tool.call({ tool: 'Bash', command, agentId: 's1' })
     expect(ran.deny).toBeUndefined()
@@ -191,6 +200,16 @@ test('the scout runs only listed read-only shell commands', async ($, on) => {
     'git log\nrm a.go',
     'git diff --output=a.go',
     'git log "--output" a.go',
+    'git log --out=a.go',
+    'git log --o=a.go',
+    'git log --out\\put=a.go',
+    'git log --o${x}utput=a.go',
+    'git log --{output,x}=a.go',
+    'git log --outpu?=a.go',
+    "git log --format='%h' a.go",
+    'git diff --ext-diff',
+    'git diff --textconv',
+    'git log\t--output=a.go',
   ]
   for (const command of refused) {
     const ran = await $.tool.call({ tool: 'Bash', command, agentId: 's1' })
