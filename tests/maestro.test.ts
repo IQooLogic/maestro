@@ -162,3 +162,61 @@ test('the claude agent type is pinned to sonnet', async ($, on) => {
   const got = await $.agent.spawn({ subagentType: 'claude', prompt: 'x', model: 'opus' })
   expect(got.model).toBe('sonnet')
 })
+
+test('the scout runs only listed read-only shell commands', async ($, on) => {
+  on('tool.call', () => ({ result: {} }))
+  on('agent.list', () => ({
+    value: [
+      { id: 's1', type: 'maestro:scout', description: 'find', status: 'running' as const },
+      { id: 'i1', type: 'maestro:implementer-sonnet', description: 'fix', status: 'running' as const },
+    ],
+  }))
+
+  const allowed = ['git log --oneline -5', 'git show HEAD:go.mod', "git diff 'main' -- src", 'git blame -L 1,9 a.go', 'ls -la src', 'wc -l a.go']
+  for (const command of allowed) {
+    const ran = await $.tool.call({ tool: 'Bash', command, agentId: 's1' })
+    expect(ran.deny).toBeUndefined()
+  }
+
+  const refused = [
+    'rm -rf src',
+    'git commit -m x',
+    'git -C /tmp log',
+    'git log > out.txt',
+    'git log | head',
+    'git log; rm a.go',
+    'ls && rm a.go',
+    'ls $(rm a.go)',
+    'ls `rm a.go`',
+    'git log\nrm a.go',
+    'git diff --output=a.go',
+    'git log "--output" a.go',
+  ]
+  for (const command of refused) {
+    const ran = await $.tool.call({ tool: 'Bash', command, agentId: 's1' })
+    expect(ran.deny).toContain('maestro: the scout is read-only')
+  }
+})
+
+test('other subagents and the main loop keep their shell', async ($, on) => {
+  on('tool.call', () => ({ result: {} }))
+  on('agent.list', () => ({
+    value: [{ id: 'i1', type: 'maestro:implementer-sonnet', description: 'fix', status: 'running' as const }],
+  }))
+
+  const implementer = await $.tool.call({ tool: 'Bash', command: 'go test ./... > out.txt', agentId: 'i1' })
+  expect(implementer.deny).toBeUndefined()
+
+  const main = await $.tool.call({ tool: 'Bash', command: 'make build && make test' })
+  expect(main.deny).toBeUndefined()
+})
+
+test('a failed agent lookup refuses the subagent command', async ($, on) => {
+  on('tool.call', () => ({ result: {} }))
+  on('agent.list', () => {
+    throw new Error('lookup down')
+  })
+
+  const ran = await $.tool.call({ tool: 'Bash', command: 'rm -rf src', agentId: 's1' })
+  expect(ran.deny).toBe('maestro: its scout shell guard failed.')
+})

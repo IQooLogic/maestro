@@ -23,6 +23,23 @@ const ORCHESTRATOR_EDITABLE = [
   /(^|\/)\.claude\/settings(\.local)?\.json$/,
 ]
 
+// Shell commands the scout may run: read-only ones its Read, Grep and Glob
+// do not cover. A command passes only when it starts with one of these, joins
+// nothing (no ; & | < > ` $( or newline) and writes no file (git's --output).
+const SCOUT_COMMANDS = [['git', 'log'], ['git', 'show'], ['git', 'diff'], ['git', 'blame'], ['ls'], ['wc']]
+const SHELL_JOINERS = /[;&|<>`\n\r]|\$\(/
+
+const scoutCommandRefusal = (command: string): string | undefined => {
+  if (SHELL_JOINERS.test(command)) return 'it chains, pipes, redirects or substitutes'
+
+  const words = command.trim().split(/\s+/).map(word => word.replace(/["']/g, ''))
+  const isListed = SCOUT_COMMANDS.some(prefix => prefix.every((word, i) => words[i] === word))
+  if (!isListed) return `it is not one of: ${SCOUT_COMMANDS.map(prefix => prefix.join(' ')).join(', ')}`
+  if (words.some(word => word.startsWith('--output'))) return 'it writes a file (--output)'
+
+  return undefined
+}
+
 const ROUTING = `# Maestro: model tiers
 
 You are the orchestrator. You plan, decide, brief, and review. You do not write production code yourself: Edit, Write and NotebookEdit on code files are refused in this session's main loop.
@@ -121,6 +138,19 @@ export const register: Register = on => {
     const denied = guardMainEdit(e.agentId, e.file_path, 'Write')
     return denied === undefined ? next(e) : { deny: denied }
   }).catch(($, e, next) => (next.called ? next(e) : { deny: 'maestro: its edit guard failed.' }))
+
+  // The scout's Bash is held to SCOUT_COMMANDS. Its type is looked up per call,
+  // not remembered from agent.spawn, so a reload mid-run cannot unguard it.
+  on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
+    if (e.agentId === undefined) return next(e)
+
+    const agents = await $.agent.list()
+    const isScout = agents.some(agent => agent.id === e.agentId && agent.type === 'maestro:scout')
+    if (!isScout) return next(e)
+
+    const refusal = scoutCommandRefusal(e.command)
+    return refusal === undefined ? next(e) : { deny: `maestro: the scout is read-only and cannot run "${e.command}": ${refusal}.` }
+  }).catch(($, e, next) => (next.called ? next(e) : { deny: 'maestro: its scout shell guard failed.' }))
 
   on('tool.call', { tool: 'NotebookEdit' }, ($, e, next) => {
     const denied = guardMainEdit(e.agentId, e.notebook_path, 'NotebookEdit')
