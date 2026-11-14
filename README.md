@@ -139,6 +139,13 @@ claude plugin validate .
 claude plugin test .
 ```
 
+Both must pass before a change is merged or released.
+
+## Contributing and releases
+
+- To report a problem or send a change, see [CONTRIBUTING.md](CONTRIBUTING.md).
+- To publish a new version (version bump, tag and GitHub release), see [RELEASING.md](RELEASING.md).
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
