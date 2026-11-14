@@ -1,6 +1,6 @@
 {
   "name": "maestro",
-  "owner": { "name": "AST" },
+  "owner": { "name": "Milos" },
   "description": "Model-tier orchestration for Claude Code",
   "plugins": [
     {
