@@ -110,15 +110,15 @@ test('/maestro off lets the main loop edit code, /maestro on blocks it again', a
   on('ui.status', () => ({ value: undefined }))
 
   const off = await $.command.run({ command: 'maestro', args: 'off' })
-  expect(off.text).toBe('maestro: main-session code edits are allowed')
+  expect(off.text).toBe('main-session code edits are allowed')
   const unlocked = await $.tool.call({ tool: 'Edit', file_path: '/repo/main.go', old_string: 'a', new_string: 'b' })
   expect(unlocked.deny).toBeUndefined()
 
   const status = await $.command.run({ command: 'maestro', args: 'status' })
-  expect(status.text).toBe('maestro: main-session code edits are allowed')
+  expect(status.text).toBe('main-session code edits are allowed')
 
   const back = await $.command.run({ command: 'maestro', args: 'on' })
-  expect(back.text).toBe('maestro: main-session code edits are blocked')
+  expect(back.text).toBe('main-session code edits are blocked')
   const locked = await $.tool.call({ tool: 'Edit', file_path: '/repo/main.go', old_string: 'a', new_string: 'b' })
   expect(locked.deny).toContain('the orchestrator does not Edit')
 })
@@ -127,10 +127,10 @@ test('/maestro refuses an unknown argument and keeps its state', async ($, on) =
   on('ui.status', () => ({ value: undefined }))
 
   const bad = await $.command.run({ command: 'maestro', args: 'maybe' })
-  expect(bad.text).toBe('maestro: unknown argument "maybe" (use on, off or status)')
+  expect(bad.text).toBe('unknown argument "maybe" (use on, off or status)')
 
   const status = await $.command.run({ command: 'maestro', args: '' })
-  expect(status.text).toBe('maestro: main-session code edits are blocked')
+  expect(status.text).toBe('main-session code edits are blocked')
 })
 
 test('the main loop cannot edit a notebook', async ($, on) => {

@@ -80,11 +80,11 @@ export const register: Register = on => {
     const arg = e.args.trim()
     if (arg === 'on') isEnforcing = true
     else if (arg === 'off') isEnforcing = false
-    else if (arg !== '' && arg !== 'status') return { text: `maestro: unknown argument "${arg}" (use on, off or status)` }
+    else if (arg !== '' && arg !== 'status') return { text: `unknown argument "${arg}" (use on, off or status)` }
 
     $.ui.status(isEnforcing ? undefined : 'maestro: main edits unlocked')
 
-    return { text: `maestro: main-session code edits are ${isEnforcing ? 'blocked' : 'allowed'}` }
+    return { text: `main-session code edits are ${isEnforcing ? 'blocked' : 'allowed'}` }
   })
 
   // Orchestrator model: rewrite only the main loop's requests; subagents,

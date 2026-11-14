@@ -102,6 +102,7 @@ check() {
 }
 
 contains() { grep -qF -- "$2" <<<"$1"; }
+equals() { [[ "$1" == "$2" ]]; }
 all_match() { [[ -n "$1" ]] && ! grep -qvE -- "$2" <<<"$1"; }
 
 scenario_status() {
@@ -109,7 +110,7 @@ scenario_status() {
   dir=$(new_work_dir)
   log="$LOG_DIR/status.jsonl"
   run_claude status "$dir" "/maestro status"
-  check "/maestro status says edits are blocked" contains "$(final_result "$log")" "main-session code edits are blocked"
+  check "/maestro status says edits are blocked, prefixed once" equals "$(final_result "$log")" "maestro: main-session code edits are blocked"
 }
 
 scenario_main_edit() {
