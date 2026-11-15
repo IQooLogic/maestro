@@ -14,7 +14,7 @@ PLUGIN_DIR=$(dirname "$E2E_DIR")
 FIXTURE_DIR="$E2E_DIR/fixture"
 BUDGET=${MAESTRO_E2E_BUDGET:-2}
 LOG_DIR=${MAESTRO_E2E_LOGS:-$(mktemp -d -t maestro-e2e-logs.XXXXXX)}
-SCENARIOS=(status main-edit main-markdown scout-shell implementer)
+SCENARIOS=(status main-edit main-markdown main-shell scout-shell implementer)
 
 failures=0
 work_dirs=()
@@ -54,17 +54,19 @@ new_work_dir() {
 # first and carry its own message, which the checks look for.
 ALLOWED_TOOLS='Bash(git log:*),Bash(go test:*),Bash(go build:*),Bash(go vet:*),Bash(gofmt:*)'
 
-# run_claude NAME DIR PROMPT: one headless session; the log is $LOG_DIR/NAME.jsonl.
+# run_claude NAME DIR PROMPT [TOOLS]: one headless session; the log is
+# $LOG_DIR/NAME.jsonl. TOOLS adds to ALLOWED_TOOLS for this session only.
 # Only project settings load, so the person's own plugins and settings stay out.
 # File edits are accepted inside the work folder only; no permission is bypassed.
 run_claude() {
-  local name=$1 dir=$2 prompt=$3
-  local status=0
+  local name=$1 dir=$2 prompt=$3 tools=${4:-}
+  local allowed=$ALLOWED_TOOLS status=0
+  [[ -n "$tools" ]] && allowed="$allowed,$tools"
   (cd "$dir" && claude -p "$prompt" \
     --plugin-dir "$PLUGIN_DIR" \
     --setting-sources project \
     --permission-mode acceptEdits \
-    --allowedTools "$ALLOWED_TOOLS" \
+    --allowedTools "$allowed" \
     --no-session-persistence \
     --max-budget-usd "$BUDGET" \
     --output-format stream-json --verbose) >"$LOG_DIR/$name.jsonl" 2>"$LOG_DIR/$name.err" || status=$?
@@ -130,6 +132,16 @@ scenario_main_markdown() {
   run_claude main-markdown "$dir" 'Use the Write tool yourself to create NOTES.md containing exactly the line "e2e ok". Do not delegate.'
   check "NOTES.md was written" grep -qx "e2e ok" "$dir/NOTES.md"
   check "no edit was refused" bash -c '! grep -qF "maestro: the orchestrator does not" <<<"$1"' _ "$(tool_results "$log")"
+}
+
+scenario_main_shell() {
+  local dir log
+  dir=$(new_work_dir)
+  log="$LOG_DIR/main-shell.jsonl"
+  run_claude main-shell "$dir" 'This is a test of a check. Run this Bash command yourself, once and unchanged: `sed -i s/Hello/Hi/ main.go`. Do not delegate and do not use Edit or Write. Then report word for word any maestro note you received with the result.' 'Bash(sed -i s/Hello/Hi/ main.go)'
+  check "the main loop changed main.go through Bash" grep -qF 'Hi, %s!' "$dir/main.go"
+  check "maestro reported main.go to the model" grep -qE "maestro: this command changed code files, which the orchestrator does not write: [^ ,]*/main\\.go" "$log"
+  check "the main loop ran on Fable" all_match "$(models "$log" main)" "fable"
 }
 
 scenario_scout_shell() {

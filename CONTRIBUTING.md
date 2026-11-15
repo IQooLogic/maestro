@@ -39,7 +39,7 @@ To report a way around a guard (an edit the main session should not make, or a s
 
 | Path | What it holds |
 |------|---------------|
-| `hooks/register.ts` | All hooks: the edit guard, model pinning, routing rules, the scout shell guard and the `/maestro` command. The constants at the top are the configuration. |
+| `hooks/register.ts` | All hooks: the edit guard, model pinning, routing rules, the scout shell guard, the main-session shell check and the `/maestro` command. The constants at the top are the configuration. |
 | `hooks/hooks.json` | Names the hooks module. |
 | `agents/*.md` | The scout and the two implementers: their model, tools and prompt. |
 | `tests/maestro.test.ts` | The tests. `claude plugin test .` runs them. |
@@ -72,7 +72,7 @@ To report a way around a guard (an edit the main session should not make, or a s
 
 5. Try the change in a real session. With `--plugin-dir` or the skills link, a saved file reloads the plugin. Run `/maestro status` to see that it loaded.
 
-   For a change to a hook, an agent or the routing rules, also run the end-to-end tests: `e2e/run.sh`. They run real sessions and cost about $1.30 for a full run. See [e2e/README.md](e2e/README.md).
+   For a change to a hook, an agent or the routing rules, also run the end-to-end tests: `e2e/run.sh`. They run real sessions and cost about $1.50 for a full run. See [e2e/README.md](e2e/README.md).
 
 6. If the change is visible to users, update `README.md` in the same branch.
 
