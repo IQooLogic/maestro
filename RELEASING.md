@@ -91,7 +91,7 @@ claude plugin test .
 
 **Check:** `validate` ends with `✔ Validation passed` and shows no `✘` line. `test` shows `0 fail`.
 
-Then run the end-to-end tests (real sessions, about $1.30, see [e2e/README.md](e2e/README.md)):
+Then run the end-to-end tests (real sessions, about $1.50, see [e2e/README.md](e2e/README.md)):
 
 ```
 e2e/run.sh

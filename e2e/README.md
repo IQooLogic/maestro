@@ -14,7 +14,7 @@ e2e/run.sh --list           # the scenario names
 
 You need `claude` (logged in), `jq`, `git` and `go` on your `PATH`.
 
-**They cost money.** Each scenario is a real session on your account: the main loop runs on Fable, and subagents on Haiku or Sonnet. A full run cost about $1.30 when these tests were written (`status` is free, the others $0.25 to $0.45 each). `MAESTRO_E2E_BUDGET` caps each scenario (default `2`, in USD).
+**They cost money.** Each scenario is a real session on your account: the main loop runs on Fable, and subagents on Haiku or Sonnet. A full run cost about $1.50 when these tests were last run (`status` is free, the others $0.23 to $0.49 each). `MAESTRO_E2E_BUDGET` caps each scenario (default `2`, in USD).
 
 | Variable | Default | Effect |
 |----------|---------|--------|
@@ -31,6 +31,7 @@ The script exits `0` when every check passes, `1` when one fails, and `2` when a
 | `status` | Run `/maestro status` | The answer says edits are blocked. No model call. |
 | `main-edit` | Edit `main.go` itself | maestro refuses the Edit, `main.go` is unchanged, and the main loop ran on Fable. |
 | `main-markdown` | Write `NOTES.md` itself | The file is written and nothing is refused. |
+| `main-shell` | Run `sed -i s/Hello/Hi/ main.go` itself | The command changed `main.go`, maestro told the model that `main.go` changed, and the main loop ran on Fable. |
 | `scout-shell` | Have the scout run `git log --oneline` and `git log --oneline > log.txt` | The scout ran `git log`, `log.txt` was not written, and the scout ran on Haiku. A line says which layer stopped the redirect. |
 | `implementer` | Delegate a change to `maestro:implementer-sonnet` | `main.go` has the change, `go test` passes, and the implementer ran on Sonnet. |
 
