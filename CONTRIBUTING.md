@@ -39,7 +39,7 @@ To report a way around a guard (an edit the main session should not make, or a s
 
 | Path | What it holds |
 |------|---------------|
-| `hooks/register.ts` | All hooks: the edit guard, model pinning, routing rules, the scout shell guard and the `/maestro` command. The constants at the top are the configuration. |
+| `hooks/register.ts` | All hooks: the edit guard, model pinning, routing rules, the scout shell guard, the main-session shell check and the `/maestro` command. The constants at the top are the configuration. |
 | `hooks/hooks.json` | Names the hooks module. |
 | `agents/*.md` | The scout and the two implementers: their model, tools and prompt. |
 | `tests/maestro.test.ts` | The tests. `claude plugin test .` runs them. |
